@@ -1,0 +1,297 @@
+"use client";
+
+import React, { useState } from "react";
+import Stories from "@/components/Stories";
+import SocialFeedNew from "@/components/SocialFeedNew";
+
+export default function Page() {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (!email || !email.includes("@")) {
+      setError("Por favor, insira um email válido");
+      setLoading(false);
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao fazer login");
+      }
+
+      setLoggedIn(true);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao criar conta");
+      }
+
+      setIsRegistering(false);
+      handleLogin(e);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  if (loggedIn) {
+    return (
+      <div className="flex max-w-6xl mx-auto gap-8">
+        {/* Main content: Stories and Feed */}
+        <div className="max-w-[470px] w-full mx-auto">
+          <Stories />
+          <SocialFeedNew />
+        </div>
+
+        {/* Right sidebar */}
+        <div className="hidden lg:block w-[320px] mt-6">
+          {/* Profile section */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <img
+                src="/default-avatar.png"
+                alt="Profile"
+                className="w-14 h-14 rounded-full border p-[2px] dark:border-gray-600"
+              />
+              <div className="ml-4">
+                <h2 className="font-semibold text-sm dark:text-gray-200">username</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Nome Completo</p>
+              </div>
+            </div>
+            <button className="text-blue-500 text-sm font-semibold">Trocar</button>
+          </div>
+
+          {/* Suggestions section */}
+          <div>
+            <div className="flex justify-between mb-4">
+              <span className="font-semibold text-gray-500 dark:text-gray-400 text-sm">
+                Sugestões para você
+              </span>
+              <button className="text-sm font-semibold dark:text-gray-200">Ver tudo</button>
+            </div>
+
+            {/* Suggestion items */}
+            {[1, 2, 3, 4, 5].map((_, i) => (
+              <div key={i} className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <img
+                    src="/default-avatar.png"
+                    alt="Suggestion"
+                    className="w-8 h-8 rounded-full dark:border-gray-600"
+                  />
+                  <div className="ml-3">
+                    <p className="text-sm font-semibold dark:text-gray-200">usuario_{i + 1}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Novo no Unio</p>
+                  </div>
+                </div>
+                <button className="text-blue-500 text-xs font-semibold">
+                  Seguir
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer links */}
+          <div className="mt-6">
+            <nav className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-400">
+              <a href="#" className="hover:underline">Sobre</a>
+              <span>•</span>
+              <a href="#" className="hover:underline">Ajuda</a>
+              <span>•</span>
+              <a href="#" className="hover:underline">Privacidade</a>
+              <span>•</span>
+              <a href="#" className="hover:underline">Termos</a>
+            </nav>
+            <p className="text-xs text-gray-400 mt-4">
+              © 2024 Unio
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-8 max-w-md">
+      {!isRegistering ? (
+        <>
+          <h2 className="text-4xl font-bold mb-6 text-blue-800 dark:text-blue-400">Login</h2>
+          <form onSubmit={handleLogin} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded">
+                {error}
+              </div>
+            )}
+            <label className="block mb-4">
+              <span className="text-gray-700 dark:text-gray-300">Email universitário</span>
+              <input
+                type="email"
+                name="email"
+                required
+                disabled={loading}
+                placeholder="seuemail@universidade.edu.br"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              />
+            </label>
+            <label className="block mb-6">
+              <span className="text-gray-700 dark:text-gray-300">Senha</span>
+              <input
+                type="password"
+                name="password"
+                required
+                disabled={loading}
+                placeholder="Senha"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition disabled:bg-blue-400"
+            >
+              {loading ? "Entrando..." : "Entrar"}
+            </button>
+            <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
+              Não tem uma conta?{" "}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setIsRegistering(true);
+                  setError("");
+                }}
+                className="text-blue-700 dark:text-blue-400 hover:underline disabled:text-blue-400 dark:disabled:text-blue-300"
+              >
+                Criar conta
+              </button>
+            </p>
+          </form>
+        </>
+      ) : (
+        <>
+          <h2 className="text-4xl font-bold mb-6 text-blue-800 dark:text-blue-400">Criar Conta</h2>
+          <form onSubmit={handleRegister} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded">
+                {error}
+              </div>
+            )}
+            <label className="block mb-4">
+              <span className="text-gray-700 dark:text-gray-300">Email universitário</span>
+              <input
+                type="email"
+                name="email"
+                required
+                disabled={loading}
+                placeholder="seuemail@universidade.edu.br"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              />
+            </label>
+            <label className="block mb-4">
+              <span className="text-gray-700 dark:text-gray-300">Senha</span>
+              <input
+                type="password"
+                name="password"
+                required
+                disabled={loading}
+                placeholder="Senha"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              />
+            </label>
+            <label className="block mb-6">
+              <span className="text-gray-700 dark:text-gray-300">Confirmar Senha</span>
+              <input
+                type="password"
+                name="confirmPassword"
+                required
+                disabled={loading}
+                placeholder="Confirme sua senha"
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition disabled:bg-green-400"
+            >
+              {loading ? "Criando conta..." : "Criar Conta"}
+            </button>
+            <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
+              Já tem uma conta?{" "}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setIsRegistering(false);
+                  setError("");
+                }}
+                className="text-blue-700 dark:text-blue-400 hover:underline disabled:text-blue-400 dark:disabled:text-blue-300"
+              >
+                Fazer login
+              </button>
+            </p>
+          </form>
+        </>
+      )}
+    </div>
+  );
+}
